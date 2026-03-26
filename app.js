@@ -106,7 +106,7 @@ const app = {
     if (now.getHours() >= 19) { // 19:00 = 7:00 PM (after 6:59 PM)
       const todayStr = now.toDateString();
       const lastReminder = localStorage.getItem('performx_last_reminder');
-      
+
       if (lastReminder !== todayStr) {
         if (currentUser === 'Admin' || currentUser === null) {
           // If admin is logged in OR no one is logged in (dashboard open)
@@ -129,24 +129,24 @@ const app = {
                 </div>
               `;
             });
-            
+
             // Only show modal if an admin is using the panel, to prevent uninvited popups on standard login screen, 
             // OR if it's currently on dashboard
             const v = document.querySelector('.view.active');
             if (v && (v.id === 'admin-view' || v.id === 'dashboard-view')) {
-               document.getElementById('reminder-modal-title').innerHTML = '<i class="fa-solid fa-bell" style="color: var(--accent-primary);"></i> 7:00 PM Checklist Reminder';
-               document.getElementById('reminder-modal-desc').innerText = 'It is past 6:59 PM. The following staff members still have incomplete checklists. Send them a WhatsApp reminder?';
-               this.showModal('evening-reminder-modal');
+              document.getElementById('reminder-modal-title').innerHTML = '<i class="fa-solid fa-bell" style="color: var(--accent-primary);"></i> 7:00 PM Checklist Reminder';
+              document.getElementById('reminder-modal-desc').innerText = 'It is past 6:59 PM. The following staff members still have incomplete checklists. Send them a WhatsApp reminder?';
+              this.showModal('evening-reminder-modal');
             }
           } else {
-             localStorage.setItem('performx_last_reminder', todayStr);
+            localStorage.setItem('performx_last_reminder', todayStr);
           }
         } else {
           // A staff is logged in
           const staff = staffData.find(s => s.id === currentUser);
           if (staff && staff.tasks.some(t => t.status === 'pending')) {
-             this.showToast('Reminder: Please fill your checklist!', 'danger', 'fa-clock');
-             localStorage.setItem('performx_last_reminder', todayStr);
+            this.showToast('Reminder: Please fill your checklist!', 'danger', 'fa-clock');
+            localStorage.setItem('performx_last_reminder', todayStr);
           }
         }
       }
@@ -164,11 +164,11 @@ const app = {
       alert("All staff members with registered WhatsApp numbers have completed their tasks!");
       return;
     }
-    
+
     const list = document.getElementById('reminder-staff-list');
     if (!list) return;
     list.innerHTML = '';
-    
+
     pendingStaff.forEach(staff => {
       const phone = staff.phone.replace(/[^0-9]/g, '');
       const message = `Hello ${staff.name}, reminder to fill your PerformX checklist!`;
@@ -182,7 +182,7 @@ const app = {
         </div>
       `;
     });
-    
+
     document.getElementById('reminder-modal-title').innerHTML = '<i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Mass WhatsApp Reminder';
     document.getElementById('reminder-modal-desc').innerText = 'The following staff members have incomplete checklists. Click to prompt WhatsApp Web:';
     this.showModal('evening-reminder-modal');
@@ -462,7 +462,7 @@ const app = {
       let percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
       const initials = staff.name.split(' ').map(n => n[0]).join('').substring(0, 2);
 
-      let avatarHTML = staff.avatar 
+      let avatarHTML = staff.avatar
         ? `<div class="staff-avatar" style="background-image: url('${staff.avatar}'); background-size: cover; background-position: center; color: transparent;"></div>`
         : `<div class="staff-avatar">${initials}</div>`;
 
@@ -524,33 +524,33 @@ const app = {
     const grid = document.getElementById('calendar-grid');
     if (!grid) return;
     grid.innerHTML = '';
-    
+
     const monthYearEl = document.getElementById('cal-month-year');
     if (monthYearEl) {
       monthYearEl.innerText = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
-    
+
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
+
     const staff = staffData.find(s => s.id === currentStaffId);
     const daysOff = staff && staff.daysOff ? staff.daysOff : [];
-    
+
     const today = new Date();
-    
+
     for (let i = 0; i < firstDay; i++) {
       grid.innerHTML += `<div class="cal-day empty"></div>`;
     }
-    
+
     for (let i = 1; i <= daysInMonth; i++) {
-      const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       const isDayOff = daysOff.includes(dateStr);
       const isToday = today.getDate() === i && today.getMonth() === currentMonth && today.getFullYear() === currentYear;
-      
+
       let classes = 'cal-day';
       if (isToday) classes += ' today';
       if (isDayOff) classes += ' day-off';
-      
+
       grid.innerHTML += `<div class="${classes}" onclick="app.toggleDayOff('${dateStr}')">${i}</div>`;
     }
   },
@@ -558,9 +558,9 @@ const app = {
   toggleDayOff(dateStr) {
     const staff = staffData.find(s => s.id === currentStaffId);
     if (!staff) return;
-    
+
     if (!staff.daysOff) staff.daysOff = [];
-    
+
     const index = staff.daysOff.indexOf(dateStr);
     if (index > -1) {
       staff.daysOff.splice(index, 1);
@@ -581,7 +581,7 @@ const app = {
 
     const index = ranking.findIndex(r => r.id === staffId);
     if (ranking[index].completed === 0) return '-';
-    
+
     const rankNum = index + 1;
     let suffix = 'th';
     if (rankNum % 10 === 1 && rankNum !== 11) suffix = 'st';
@@ -604,7 +604,7 @@ const app = {
       avatarEl.style.backgroundImage = 'none';
       avatarEl.innerText = initials;
     }
-    
+
     document.getElementById('staff-detail-name').innerText = staff.name;
     document.getElementById('staff-detail-position').innerText = staff.position;
     document.getElementById('staff-detail-phone').innerHTML = `<i class="fa-brands fa-whatsapp"></i> <span>${staff.phone || 'No Phone Added'}</span>`;
@@ -614,14 +614,14 @@ const app = {
     currentMonth = new Date().getMonth();
     currentYear = new Date().getFullYear();
     this.renderCalendar();
-    
+
     const editBtn = document.getElementById('edit-profile-btn');
     if (currentUser === 'Admin' && currentUser !== id) {
       if (editBtn) editBtn.style.display = 'none';
     } else {
       if (editBtn) editBtn.style.display = 'inline-flex';
     }
-    
+
     this.showView('staff-view');
   },
 
@@ -715,9 +715,9 @@ const app = {
       s.tasks.forEach(t => { if (t.status === 'completed') completed++; });
       return { id: s.id, name: s.name, avatar: s.avatar, completed };
     });
-    
+
     ranking.sort((a, b) => b.completed - a.completed);
-    
+
     const leaderboardCont = document.getElementById('admin-leaderboard');
     if (leaderboardCont) {
       leaderboardCont.innerHTML = '';
@@ -725,13 +725,13 @@ const app = {
         if (staff.completed === 0) return;
         const rankColors = ['#fbbf24', '#9ca3af', '#b45309'];
         const color = rankColors[index] || 'var(--text-secondary)';
-        
-        let avHTML = staff.avatar ? `<div style="width: 30px; height: 30px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>` 
-          : `<div style="width: 30px; height: 30px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">${staff.name.substring(0,1)}</div>`;
-        
+
+        let avHTML = staff.avatar ? `<div style="width: 30px; height: 30px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
+          : `<div style="width: 30px; height: 30px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">${staff.name.substring(0, 1)}</div>`;
+
         leaderboardCont.innerHTML += `
           <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-            <div style="color: ${color}; font-size: 1.2rem; font-weight: bold; width: 25px;">#${index+1}</div>
+            <div style="color: ${color}; font-size: 1.2rem; font-weight: bold; width: 25px;">#${index + 1}</div>
             ${avHTML}
             <div style="flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${staff.name}</div>
             <div style="font-weight: bold; color: var(--success-color);">${staff.completed} <i class="fa-solid fa-check"></i></div>
@@ -745,11 +745,11 @@ const app = {
 
     const ctx = document.getElementById('admin-pie-chart');
     if (!ctx) return;
-    
+
     const labels = [];
     const data = [];
     const bgColors = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
-    
+
     let totalTeamCompleted = 0;
     ranking.forEach(s => {
       if (s.completed > 0) {
@@ -790,10 +790,10 @@ const app = {
   showEditProfileModal() {
     const staff = staffData.find(s => s.id === currentStaffId);
     if (!staff) return;
-    
+
     document.getElementById('customize-staff-name').value = staff.name;
     document.getElementById('customize-avatar-base64').value = staff.avatar || '';
-    
+
     const preview = document.getElementById('customize-avatar-preview');
     if (staff.avatar) {
       preview.style.backgroundImage = `url('${staff.avatar}')`;
@@ -802,7 +802,7 @@ const app = {
       preview.style.backgroundImage = 'none';
       preview.innerHTML = '<i class="fa-solid fa-camera" style="font-size: 2rem; color: var(--text-secondary);"></i>';
     }
-    
+
     this.showModal('staff-customize-modal');
   },
 
@@ -824,12 +824,12 @@ const app = {
     e.preventDefault();
     const staff = staffData.find(s => s.id === currentStaffId);
     if (!staff) return;
-    
+
     staff.name = document.getElementById('customize-staff-name').value;
     staff.phone = document.getElementById('customize-staff-phone').value;
     const newAvatar = document.getElementById('customize-avatar-base64').value;
     staff.avatar = newAvatar ? newAvatar : null;
-    
+
     this.saveData();
     this.closeModal('staff-customize-modal');
     this.openChecklistView(staff.id); // Refresh
@@ -968,7 +968,7 @@ const app = {
   sendWhatsappReminder(id) {
     const staff = staffData.find(s => s.id === id);
     if (!staff) return;
-    
+
     if (!staff.phone || staff.phone.trim() === '') {
       alert(`No WhatsApp number on file for ${staff.name}. Edit their profile to add one.`);
       return;
@@ -976,7 +976,7 @@ const app = {
 
     let pendingCount = 0;
     staff.tasks.forEach(t => { if (t.status === 'pending') pendingCount++; });
-    
+
     if (pendingCount === 0) {
       alert(`${staff.name} has no pending tasks!`);
       return;
@@ -985,7 +985,7 @@ const app = {
     let phone = staff.phone.replace(/[^0-9]/g, '');
     const message = `Hello ${staff.name}, you have ${pendingCount} pending task(s) on your PerformX checklist! Please update them.`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    
+
     window.open(url, '_blank');
   },
 
@@ -1118,7 +1118,7 @@ const app = {
     grid.innerHTML = '';
 
     let found = 0;
-    
+
     if (dateInput.value) {
       const targetDateStr = dateInput.value;
       const targetDate = new Date(dateInput.value + "T12:00:00").toDateString();
@@ -1128,7 +1128,7 @@ const app = {
 
         const record = staff.history.find(h => h.date === targetDate);
         const isDayOff = staff.daysOff && staff.daysOff.includes(targetDateStr);
-        
+
         if (record || isDayOff) {
           found++;
           let completed = 0, total = record ? record.tasks.length : 0;
@@ -1137,7 +1137,7 @@ const app = {
 
           let tHtml = '';
           if (isDayOff) {
-             tHtml += `<div style="padding: 10px; background: rgba(244, 63, 94, 0.2); color: var(--danger-color); border-radius: 8px; margin-bottom: 1rem; font-weight: bold; text-align: center;"><i class="fa-solid fa-plane"></i> Marked as Day Off</div>`;
+            tHtml += `<div style="padding: 10px; background: rgba(244, 63, 94, 0.2); color: var(--danger-color); border-radius: 8px; margin-bottom: 1rem; font-weight: bold; text-align: center;"><i class="fa-solid fa-plane"></i> Marked as Day Off</div>`;
           }
           if (!record || total === 0) {
             tHtml += '<div style="font-size: 0.85rem; color: var(--text-secondary)">No tasks on this date.</div>';
@@ -1151,9 +1151,9 @@ const app = {
             });
           }
 
-          let avHTML = staff.avatar ? `<div style="width: 40px; height: 40px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>` 
-          : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">${staff.name.substring(0,2)}</div>`;
-          
+          let avHTML = staff.avatar ? `<div style="width: 40px; height: 40px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
+            : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">${staff.name.substring(0, 2)}</div>`;
+
           const card = document.createElement('div');
           card.className = 'glass-panel';
           card.style.padding = '1.5rem';
@@ -1210,27 +1210,27 @@ const app = {
           });
         }
 
-        const sortedMonths = Object.keys(monthlyData).sort((a,b) => b.localeCompare(a));
-        
+        const sortedMonths = Object.keys(monthlyData).sort((a, b) => b.localeCompare(a));
+
         let monthHtmls = '';
         sortedMonths.forEach(mKey => {
-           const [yyyy, mm] = mKey.split('-');
-           const monthName = new Date(yyyy, parseInt(mm) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-           const mData = monthlyData[mKey];
-           if (mData.total === 0 && mData.daysOff.length === 0) return; // Skip empty months
+          const [yyyy, mm] = mKey.split('-');
+          const monthName = new Date(yyyy, parseInt(mm) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          const mData = monthlyData[mKey];
+          if (mData.total === 0 && mData.daysOff.length === 0) return; // Skip empty months
 
-           let mPercentage = mData.total === 0 ? 0 : Math.round((mData.completed / mData.total) * 100);
-           
-           let leaveHtml = '';
-           if (mData.daysOff.length > 0) {
-             mData.daysOff.sort().forEach(d => {
-               leaveHtml += `<span style="background: rgba(244, 63, 94, 0.2); color: var(--danger-color); padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; margin: 2px; display: inline-block;">${d}</span>`;
-             });
-           } else {
-             leaveHtml = '<span style="font-size: 0.8rem; color: var(--text-secondary);">No days off taken.</span>';
-           }
+          let mPercentage = mData.total === 0 ? 0 : Math.round((mData.completed / mData.total) * 100);
 
-           monthHtmls += `
+          let leaveHtml = '';
+          if (mData.daysOff.length > 0) {
+            mData.daysOff.sort().forEach(d => {
+              leaveHtml += `<span style="background: rgba(244, 63, 94, 0.2); color: var(--danger-color); padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; margin: 2px; display: inline-block;">${d}</span>`;
+            });
+          } else {
+            leaveHtml = '<span style="font-size: 0.8rem; color: var(--text-secondary);">No days off taken.</span>';
+          }
+
+          monthHtmls += `
              <div style="margin-top: 1rem; border: 1px solid var(--glass-border); padding: 1rem; border-radius: 8px; background: rgba(0,0,0,0.1);">
                <div style="font-size: 0.9rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary); border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-regular fa-calendar-alt"></i> ${monthName}</div>
                
@@ -1254,12 +1254,12 @@ const app = {
         });
 
         if (monthHtmls === '') {
-           monthHtmls = '<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">No history available.</div>';
+          monthHtmls = '<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem;">No history available.</div>';
         }
 
-        let avHTML = staff.avatar ? `<div style="width: 40px; height: 40px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>` 
-          : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">${staff.name.substring(0,2)}</div>`;
-          
+        let avHTML = staff.avatar ? `<div style="width: 40px; height: 40px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
+          : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">${staff.name.substring(0, 2)}</div>`;
+
         const card = document.createElement('div');
         card.className = 'glass-panel';
         card.style.padding = '1.5rem';
@@ -1284,3 +1284,28 @@ const app = {
 };
 
 window.onload = () => app.init();
+
+const staffList = document.getElementById("staff-list");
+
+function loadStaff() {
+  db.collection("staff").onSnapshot((snapshot) => {
+    staffList.innerHTML = "";
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      const div = document.createElement("div");
+
+      div.innerHTML = `
+        <div>
+          <h3>${data.name}</h3>
+          <p>${data.role}</p>
+        </div>
+      `;
+
+      staffList.appendChild(div);
+    });
+  });
+}
+
+loadStaff();
