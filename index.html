@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,12 +9,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-  
+
 
   <div id="app">
     <!-- Navbar -->
-    <nav class="navbar glass-panel" id="navbar" style="display: none; border-radius: 0; border-top: none; border-left: none; border-right: none;">
+    <nav class="navbar glass-panel" id="navbar"
+      style="display: none; border-radius: 0; border-top: none; border-left: none; border-right: none;">
       <div class="brand" id="brand-logo-text" onclick="app.showDashboard()">
         <i class="fa-solid fa-chart-line"></i> PerformX
       </div>
@@ -33,25 +36,30 @@
     <!-- Login View (Sign In Page) -->
     <div id="login-view" class="view active">
       <div class="login-card glass-panel" style="max-width: 450px;">
-        <div style="font-size: 3rem; color: var(--accent-primary); margin-bottom: 1rem;"><i class="fa-solid fa-chart-pie"></i></div>
+        <div style="font-size: 3rem; color: var(--accent-primary); margin-bottom: 1rem;"><i
+            class="fa-solid fa-chart-pie"></i></div>
         <h2>Sign In</h2>
         <p>Login to your profile or enter 'admin' for Team Lead.</p>
 
-        <form id="traditional-login-form" onsubmit="app.handleTraditionalLogin(event)" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+        <form id="traditional-login-form" onsubmit="app.handleTraditionalLogin(event)"
+          style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
           <div class="form-group">
             <label>Name or 'Admin'</label>
-            <input type="text" class="input-field" id="trad-login-user" required placeholder="rmz" list="staff-usernames" autocomplete="off">
+            <input type="text" class="input-field" id="trad-login-user" required placeholder="rmz"
+              list="staff-usernames" autocomplete="off">
             <datalist id="staff-usernames"></datalist>
           </div>
           <div class="form-group">
             <label>Password</label>
             <input type="password" class="input-field" id="trad-login-pass" required placeholder="••••••••">
-            <i class="fa-solid fa-eye password-toggle" id="toggle-trad-pass" onclick="app.togglePassword('trad-login-pass', 'toggle-trad-pass')"></i>
+            <i class="fa-solid fa-eye password-toggle" id="toggle-trad-pass"
+              onclick="app.togglePassword('trad-login-pass', 'toggle-trad-pass')"></i>
           </div>
           <button type="submit" class="primary-button" style="width: 100%;">Sign In</button>
         </form>
-        
-        <div style="display: flex; justify-content: center; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+
+        <div
+          style="display: flex; justify-content: center; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
           <button class="glass-button" onclick="app.showModal('change-admin-pass-modal')">
             <i class="fa-solid fa-key"></i> Change Menu / TL Password
           </button>
@@ -65,7 +73,8 @@
         <h1 id="welcome-msg">Welcome!</h1>
         <div class="quote-container">
           <i class="fa-solid fa-quote-left" style="color: var(--accent-primary);"></i>
-          <span id="daily-quote">Success is not final, failure is not fatal: it is the courage to continue that counts.</span>
+          <span id="daily-quote">Success is not final, failure is not fatal: it is the courage to continue that
+            counts.</span>
         </div>
       </div>
 
@@ -86,19 +95,24 @@
 
       <div class="staff-profile-header glass-panel" style="justify-content: space-between;">
         <div style="display: flex; gap: 1.5rem; align-items: center;">
-          <div class="staff-profile-avatar" id="staff-detail-avatar" style="position: relative; overflow: hidden; background-size: cover; background-position: center;"></div>
+          <div class="staff-profile-avatar" id="staff-detail-avatar"
+            style="position: relative; overflow: hidden; background-size: cover; background-position: center;"></div>
           <div class="staff-profile-info">
             <h1 id="staff-detail-name"></h1>
             <p id="staff-detail-position"></p>
-            <p id="staff-detail-phone" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 5px;"><i class="fa-brands fa-whatsapp"></i> <span>No Phone Added</span></p>
-            <div id="staff-detail-rank" style="margin-top: 5px; color: var(--accent-primary); font-weight: bold;"><i class="fa-solid fa-medal"></i> Rank: -</div>
+            <p id="staff-detail-phone" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 5px;"><i
+                class="fa-brands fa-whatsapp"></i> <span>No Phone Added</span></p>
+            <div id="staff-detail-rank" style="margin-top: 5px; color: var(--accent-primary); font-weight: bold;"><i
+                class="fa-solid fa-medal"></i> Rank: -</div>
           </div>
         </div>
         <div style="display: flex; gap: 1rem;">
-          <button class="glass-button" onclick="app.showEditProfileModal()" style="border-color: var(--accent-primary);" id="edit-profile-btn">
+          <button class="glass-button" onclick="app.showEditProfileModal()" style="border-color: var(--accent-primary);"
+            id="edit-profile-btn">
             <i class="fa-solid fa-user-edit"></i> Edit Profile
           </button>
-          <button class="glass-button" onclick="app.requestPrivateNotes()" style="border-color: var(--accent-secondary);" id="private-notes-btn">
+          <button class="glass-button" onclick="app.requestPrivateNotes()"
+            style="border-color: var(--accent-secondary);" id="private-notes-btn">
             <i class="fa-solid fa-sticky-note"></i> Private Notes
           </button>
         </div>
@@ -110,7 +124,8 @@
           <div class="stat-label">Total Tasks</div>
         </div>
         <div class="stat-box glass-panel">
-          <div class="stat-value" id="stat-completed" style="background: var(--success-color); background-clip: text; -webkit-background-clip: text;">0</div>
+          <div class="stat-value" id="stat-completed"
+            style="background: var(--success-color); background-clip: text; -webkit-background-clip: text;">0</div>
           <div class="stat-label">Completed</div>
         </div>
         <div class="stat-box glass-panel">
@@ -119,27 +134,42 @@
         </div>
       </div>
 
-      <div class="time-management-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
-        <div class="clock-container glass-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
-          <h2 style="margin-bottom: 20px; color: var(--text-secondary);"><i class="fa-solid fa-clock"></i> Current Time</h2>
-          <div id="digital-clock" style="font-size: 3.5rem; font-weight: 700; background: var(--accent-gradient); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-variant-numeric: tabular-nums;">00:00:00</div>
+      <div class="time-management-grid"
+        style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="clock-container glass-panel"
+          style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
+          <h2 style="margin-bottom: 20px; color: var(--text-secondary);"><i class="fa-solid fa-clock"></i> Current Time
+          </h2>
+          <div id="digital-clock"
+            style="font-size: 3.5rem; font-weight: 700; background: var(--accent-gradient); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-variant-numeric: tabular-nums;">
+            00:00:00</div>
           <div id="digital-clock-date" style="color: var(--text-secondary); margin-top: 10px; font-size: 1.1rem;"></div>
         </div>
-        
+
         <div class="calendar-container glass-panel" style="padding: 1.5rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <button class="action-btn" style="background: rgba(255,255,255,0.1); color: var(--text-primary)" onclick="app.changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="action-btn" style="background: rgba(255,255,255,0.1); color: var(--text-primary)"
+              onclick="app.changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
             <h3 id="cal-month-year" style="font-weight: 600;">Month Year</h3>
-            <button class="action-btn" style="background: rgba(255,255,255,0.1); color: var(--text-primary)" onclick="app.changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+            <button class="action-btn" style="background: rgba(255,255,255,0.1); color: var(--text-primary)"
+              onclick="app.changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-bottom: 5px; font-size: 0.8rem; color: var(--text-secondary);">
-            <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+          <div
+            style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-bottom: 5px; font-size: 0.8rem; color: var(--text-secondary);">
+            <div>Su</div>
+            <div>Mo</div>
+            <div>Tu</div>
+            <div>We</div>
+            <div>Th</div>
+            <div>Fr</div>
+            <div>Sa</div>
           </div>
           <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;">
             <!-- Rendered by JS -->
           </div>
           <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
-            <i class="fa-solid fa-circle" style="color: var(--danger-color); font-size: 8px;"></i> Click a date to mark/unmark as Day Off
+            <i class="fa-solid fa-circle" style="color: var(--danger-color); font-size: 8px;"></i> Click a date to
+            mark/unmark as Day Off
           </div>
         </div>
       </div>
@@ -148,9 +178,10 @@
         <div class="checklist-header">
           <h2>Task Checklist</h2>
         </div>
-        
+
         <form class="add-task-form" id="add-task-form" onsubmit="app.handleAddTask(event)">
-          <input type="text" class="input-field" id="new-task-input" placeholder="Add a new task for this staff..." required>
+          <input type="text" class="input-field" id="new-task-input" placeholder="Add a new task for this staff..."
+            required>
           <button type="submit" class="primary-button"><i class="fa-solid fa-plus"></i> Add</button>
         </form>
 
@@ -178,7 +209,8 @@
       <div class="admin-layout">
         <div class="admin-sidebar glass-panel">
           <h3><i class="fa-solid fa-user-plus"></i> Add New Staff</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Register a new team member.</p>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Register a new team member.
+          </p>
           <form id="add-staff-form" onsubmit="app.handleAddStaff(event)">
             <div class="form-group">
               <label>Full Name</label>
@@ -196,7 +228,8 @@
           </form>
           <hr style="border: none; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
           <h3><i class="fa-solid fa-clock-rotate-left"></i> Historical Data</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Search past staff checklists.</p>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Search past staff checklists.
+          </p>
           <button class="glass-button" onclick="app.showHistoryView()" style="width: 100%; justify-content: center;">
             <i class="fa-solid fa-search"></i> Search History
           </button>
@@ -205,38 +238,42 @@
         <div class="admin-main glass-panel" style="padding: 1.5rem;">
           <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;">
             <div style="flex: 1; min-width: 300px;" class="glass-panel">
-               <div style="padding: 1.5rem;">
-                 <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-chart-pie"></i> Completion Chart</h3>
-                 <div style="position: relative; height: 250px;">
-                    <canvas id="admin-pie-chart"></canvas>
-                 </div>
-               </div>
+              <div style="padding: 1.5rem;">
+                <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-chart-pie"></i> Completion Chart</h3>
+                <div style="position: relative; height: 250px;">
+                  <canvas id="admin-pie-chart"></canvas>
+                </div>
+              </div>
             </div>
             <div style="flex: 1; min-width: 300px;" class="glass-panel">
-               <div style="padding: 1.5rem;">
-                 <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-trophy"></i> Top Performers</h3>
-                 <div id="admin-leaderboard" style="display: flex; flex-direction: column; gap: 0.8rem;">
-                    <!-- JS rendered -->
-                 </div>
-               </div>
+              <div style="padding: 1.5rem;">
+                <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-trophy"></i> Top Performers</h3>
+                <div id="admin-leaderboard" style="display: flex; flex-direction: column; gap: 0.8rem;">
+                  <!-- JS rendered -->
+                </div>
+              </div>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 10px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 10px;">
             <h3><i class="fa-solid fa-users"></i> Staff Control</h3>
-            <button class="glass-button" style="padding: 8px 15px; font-size: 0.9rem; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.3); color: #25D366; display: flex; align-items: center; gap: 8px;" onclick="app.showManualReminderModal()">
+            <button class="glass-button"
+              style="padding: 8px 15px; font-size: 0.9rem; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.3); color: #25D366; display: flex; align-items: center; gap: 8px;"
+              onclick="app.showManualReminderModal()">
               <i class="fa-brands fa-whatsapp" style="font-size: 1.1rem;"></i> Mass Reminder
             </button>
           </div>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">View and manage team data.</p>
-          
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">View and manage team data.
+          </p>
+
           <div class="staff-columns" id="admin-staff-columns">
             <!-- Rendered by JS -->
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- History View -->
     <div id="history-view" class="view">
       <button class="glass-button back-button" onclick="app.showAdminPanel()">
@@ -250,17 +287,22 @@
       <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
           <div style="flex: 1;">
-            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Select Date (Clear for All-Time)</label>
+            <label
+              style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Select
+              Date (Clear for All-Time)</label>
             <input type="date" class="input-field" id="history-search-date" onchange="app.renderHistory()">
           </div>
           <div style="flex: 2;">
-            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Staff Name (Optional)</label>
-            <input type="text" class="input-field" id="history-search-name" placeholder="Leave empty for all staff..." oninput="app.renderHistory()">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Staff
+              Name (Optional)</label>
+            <input type="text" class="input-field" id="history-search-name" placeholder="Leave empty for all staff..."
+              oninput="app.renderHistory()">
           </div>
         </div>
       </div>
 
-      <div id="history-results-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+      <div id="history-results-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
         <!-- JS rendered -->
       </div>
     </div>
@@ -274,7 +316,8 @@
           <button class="close-btn" onclick="app.closeModal('create-notes-pass-modal')">&times;</button>
         </div>
         <form onsubmit="app.setupNotesPassword(event)">
-          <p style="margin-bottom: 1.5rem; color: var(--text-secondary)">Protect your private notes with a secondary unique password.</p>
+          <p style="margin-bottom: 1.5rem; color: var(--text-secondary)">Protect your private notes with a secondary
+            unique password.</p>
           <div class="form-group">
             <label>Notes Password</label>
             <input type="password" class="input-field" id="cnp-1" required placeholder="••••••••">
@@ -299,7 +342,8 @@
             <label>Notes Password</label>
             <input type="password" class="input-field" id="auth-notes-pass" required placeholder="••••••••">
           </div>
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-unlock"></i> Unlock</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-unlock"></i>
+            Unlock</button>
         </form>
       </div>
     </div>
@@ -310,8 +354,11 @@
           <h3><i class="fa-solid fa-sticky-note"></i> My Private Notes</h3>
           <button class="close-btn" onclick="app.closeModal('private-notes-viewer-modal')">&times;</button>
         </div>
-        <textarea id="private-notes-content" class="input-field" style="height: 300px; resize: vertical; margin-bottom: 1rem; font-family: inherit;" placeholder="Write your private to-dos or notes here..."></textarea>
-        <button class="primary-button" onclick="app.savePrivateNotes()" style="width: 100%"><i class="fa-solid fa-save"></i> Save Notes</button>
+        <textarea id="private-notes-content" class="input-field"
+          style="height: 300px; resize: vertical; margin-bottom: 1rem; font-family: inherit;"
+          placeholder="Write your private to-dos or notes here..."></textarea>
+        <button class="primary-button" onclick="app.savePrivateNotes()" style="width: 100%"><i
+            class="fa-solid fa-save"></i> Save Notes</button>
       </div>
     </div>
 
@@ -324,12 +371,14 @@
         </div>
         <form onsubmit="app.saveCustomProfile(event)">
           <div class="form-group" style="text-align: center;">
-            <div id="customize-avatar-preview" style="width: 100px; height: 100px; border-radius: 50%; background: var(--glass-bg); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-size: cover; background-position: center; border: 2px solid var(--accent-primary);">
-               <i class="fa-solid fa-camera" style="font-size: 2rem; color: var(--text-secondary);"></i>
+            <div id="customize-avatar-preview"
+              style="width: 100px; height: 100px; border-radius: 50%; background: var(--glass-bg); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-size: cover; background-position: center; border: 2px solid var(--accent-primary);">
+              <i class="fa-solid fa-camera" style="font-size: 2rem; color: var(--text-secondary);"></i>
             </div>
             <label style="cursor: pointer; color: var(--accent-primary); font-size: 0.9rem;">
               Upload Profile Picture
-              <input type="file" id="customize-avatar-upload" accept="image/*" style="display: none;" onchange="app.handleAvatarUpload(event)">
+              <input type="file" id="customize-avatar-upload" accept="image/*" style="display: none;"
+                onchange="app.handleAvatarUpload(event)">
             </label>
             <input type="hidden" id="customize-avatar-base64">
           </div>
@@ -341,7 +390,8 @@
             <label>WhatsApp Number</label>
             <input type="text" class="input-field" id="customize-staff-phone" placeholder="e.g. 1234567890">
           </div>
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save Profile</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save
+            Profile</button>
         </form>
       </div>
     </div>
@@ -355,12 +405,14 @@
         </div>
         <form onsubmit="app.saveSettings(event)">
           <!-- Visible to Admin Only -->
-          <div class="form-group" id="admin-brand-setting" style="display: none; padding-bottom: 1rem; border-bottom: 1px solid var(--glass-border);">
+          <div class="form-group" id="admin-brand-setting"
+            style="display: none; padding-bottom: 1rem; border-bottom: 1px solid var(--glass-border);">
             <label>Brand / Webpage Name</label>
             <input type="text" class="input-field" id="setting-brand-name" placeholder="PerformX" required>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">Changes the display name of the app globally.</p>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">Changes the display name of the
+              app globally.</p>
           </div>
-          
+
           <div class="form-group">
             <label>Theme Color</label>
             <select class="input-field" id="setting-theme-color" style="appearance: auto; background: var(--bg-color);">
@@ -395,13 +447,15 @@
 
           <div class="form-group" style="margin-bottom: 2rem;">
             <label>Glass Effect</label>
-            <select class="input-field" id="setting-glass-effect" style="appearance: auto; background: var(--bg-color);">
+            <select class="input-field" id="setting-glass-effect"
+              style="appearance: auto; background: var(--bg-color);">
               <option value="on">Enabled (Translucent Blur)</option>
               <option value="off">Disabled (Solid Performance Mode)</option>
             </select>
           </div>
 
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save Settings</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save
+            Settings</button>
         </form>
       </div>
     </div>
@@ -414,16 +468,19 @@
           <button class="close-btn" onclick="app.closeModal('create-staff-pass-modal')">&times;</button>
         </div>
         <form onsubmit="app.setupStaffPassword(event)">
-          <p style="margin-bottom: 1.5rem; color: var(--text-secondary)">You do not have a password yet. Please set a secure password for your profile.</p>
+          <p style="margin-bottom: 1.5rem; color: var(--text-secondary)">You do not have a password yet. Please set a
+            secure password for your profile.</p>
           <div class="form-group">
             <label>Password</label>
             <input type="password" class="input-field" id="csp-1" required placeholder="••••••••">
-            <i class="fa-solid fa-eye password-toggle" id="toggle-csp-1" onclick="app.togglePassword('csp-1', 'toggle-csp-1')"></i>
+            <i class="fa-solid fa-eye password-toggle" id="toggle-csp-1"
+              onclick="app.togglePassword('csp-1', 'toggle-csp-1')"></i>
           </div>
           <div class="form-group">
             <label>Retype Password</label>
             <input type="password" class="input-field" id="csp-2" required placeholder="••••••••">
-            <i class="fa-solid fa-eye password-toggle" id="toggle-csp-2" onclick="app.togglePassword('csp-2', 'toggle-csp-2')"></i>
+            <i class="fa-solid fa-eye password-toggle" id="toggle-csp-2"
+              onclick="app.togglePassword('csp-2', 'toggle-csp-2')"></i>
           </div>
           <button type="submit" class="primary-button" style="width: 100%">Save & Continue</button>
         </form>
@@ -441,9 +498,11 @@
           <div class="form-group">
             <label>Enter Your Password</label>
             <input type="password" class="input-field" id="staff-login-pass" required placeholder="••••••••">
-            <i class="fa-solid fa-eye password-toggle" id="toggle-staff-login" onclick="app.togglePassword('staff-login-pass', 'toggle-staff-login')"></i>
+            <i class="fa-solid fa-eye password-toggle" id="toggle-staff-login"
+              onclick="app.togglePassword('staff-login-pass', 'toggle-staff-login')"></i>
           </div>
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-sign-in-alt"></i> Sign In</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-sign-in-alt"></i> Sign
+            In</button>
         </form>
       </div>
     </div>
@@ -459,9 +518,11 @@
           <div class="form-group">
             <label>Enter Menu / TL Password</label>
             <input type="password" class="input-field" id="admin-login-pass" required placeholder="••••••••">
-            <i class="fa-solid fa-eye password-toggle" id="toggle-admin-login" onclick="app.togglePassword('admin-login-pass', 'toggle-admin-login')"></i>
+            <i class="fa-solid fa-eye password-toggle" id="toggle-admin-login"
+              onclick="app.togglePassword('admin-login-pass', 'toggle-admin-login')"></i>
           </div>
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-sign-in-alt"></i> Sign In</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-sign-in-alt"></i> Sign
+            In</button>
         </form>
       </div>
     </div>
@@ -511,7 +572,8 @@
             <label>WhatsApp Number</label>
             <input type="text" class="input-field" id="edit-staff-phone" placeholder="e.g. 1234567890">
           </div>
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save Changes</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save
+            Changes</button>
         </form>
       </div>
     </div>
@@ -528,7 +590,8 @@
             <label>Enter Team Lead Password</label>
             <input type="password" class="input-field" id="menu-password" required placeholder="••••••••">
           </div>
-          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-unlock"></i> Unlock Panel</button>
+          <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-unlock"></i> Unlock
+            Panel</button>
         </form>
       </div>
     </div>
@@ -537,21 +600,27 @@
     <div class="modal-overlay" id="evening-reminder-modal">
       <div class="modal-content glass-panel" style="background: rgba(15, 23, 42, 0.95);">
         <div class="modal-header">
-          <h3 id="reminder-modal-title"><i class="fa-solid fa-bell" style="color: var(--accent-primary);"></i> 7:00 PM Checklist Reminder</h3>
+          <h3 id="reminder-modal-title"><i class="fa-solid fa-bell" style="color: var(--accent-primary);"></i> 7:00 PM
+            Checklist Reminder</h3>
           <button class="close-btn" onclick="app.dismissEveningReminder()">&times;</button>
         </div>
         <p id="reminder-modal-desc" style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.95rem;">
-          It is past 6:59 PM. The following staff members still have incomplete checklists. Send them a WhatsApp reminder?
+          It is past 6:59 PM. The following staff members still have incomplete checklists. Send them a WhatsApp
+          reminder?
         </p>
-        <div id="reminder-staff-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
+        <div id="reminder-staff-list"
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
           <!-- JS Rendered -->
         </div>
-        <button class="primary-button" style="width: 100%; background: var(--glass-bg); border: 1px solid var(--glass-border);" onclick="app.dismissEveningReminder()">Dismiss Screen</button>
+        <button class="primary-button"
+          style="width: 100%; background: var(--glass-bg); border: 1px solid var(--glass-border);"
+          onclick="app.dismissEveningReminder()">Dismiss Screen</button>
       </div>
     </div>
 
     <!-- Motivation Toast -->
-    <div id="motivation-toast" class="glass-panel" style="position: fixed; bottom: 20px; right: 20px; transform: translateX(200%); transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 15px 25px; background: rgba(244, 63, 94, 0.95); z-index: 1000; display: flex; align-items: center; gap: 10px; color: #fff;">
+    <div id="motivation-toast" class="glass-panel"
+      style="position: fixed; bottom: 20px; right: 20px; transform: translateX(200%); transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 15px 25px; background: rgba(244, 63, 94, 0.95); z-index: 1000; display: flex; align-items: center; gap: 10px; color: #fff;">
       <i class="fa-solid fa-heart"></i>
       <span>Don't give up! Try again tomorrow.</span>
     </div>
@@ -559,28 +628,26 @@
   </div>
 
   <footer>
-  <p>Developed by <span>Ramaaz Fazlan</span> | <span>NOVA WEB</span></p>
-</footer>
+    <p>Developed by <span>Ramaaz Fazlan</span> | <span>NOVA WEB</span></p>
+  </footer>
 
-<!-- 🔥 Firebase (PASTE HERE) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+  <!-- 🔥 Firebase FIXED -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAKr34lAhd1Sztw3-eWHmqKkP658JEOu4Q",
-    authDomain: "checklist-ba69b.firebaseapp.com",
-    projectId: "checklist-ba69b",
-  };
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAKr34lAhd1Sztw3-eWHmqKkP658JEOu4Q",
+      authDomain: "checklist-ba69b.firebaseapp.com",
+      projectId: "checklist-ba69b",
+    };
 
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-  window.db = db;
-</script>
-
-<!-- ✅ Your app -->
-<script src="app.js"></script>
+    window.db = db;
+  </script src="app.js"></script>
 
 </body>
+
 </html>
