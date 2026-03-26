@@ -59,9 +59,6 @@ const app = {
     this.updateQuote();
     setInterval(() => this.updateQuote(), 10000); // 10s
 
-    const saved = localStorage.getItem('performX_staff');
-    if (saved) staffData = JSON.parse(saved);
-
     const savedTheme = localStorage.getItem('performX_theme');
     if (savedTheme) {
       themeSettings = JSON.parse(savedTheme);
@@ -70,34 +67,103 @@ const app = {
     }
     this.applyTheme();
 
-    const today = new Date().toDateString();
-    const lastReset = localStorage.getItem('performX_lastReset');
+    let isInitialLoad = true;
 
-    staffData.forEach(staff => {
-      if (!staff.history) staff.history = [];
-      if (!staff.privateNotes) staff.privateNotes = { password: null, content: '' };
-      if (!staff.daysOff) staff.daysOff = [];
-    });
+    // Fetch localized data for fast rendering first
+    const saved = localStorage.getItem('performX_staff');
+    if (saved) staffData = JSON.parse(saved);
 
-    if (lastReset && lastReset !== today) {
-      staffData.forEach(staff => {
-        const dayCopy = JSON.parse(JSON.stringify(staff.tasks));
-        staff.history.push({ date: lastReset, tasks: dayCopy });
-        staff.tasks.forEach(t => { t.status = 'pending'; t.locked = false; });
+    // Setup Firebase Listener
+    if (window.db) {
+      db.collection('appData').doc('staffRecords').onSnapshot((doc) => {
+        if (doc.exists) {
+          staffData = doc.data().staff;
+        } else {
+          // Document doesn't exist, let's create it with default localized staffData
+          this.saveData();
+        }
+
+        // Daily task reset checks inside listener
+        const today = new Date().toDateString();
+        const lastReset = localStorage.getItem('performX_lastReset');
+        let needsSave = false;
+
+        staffData.forEach(staff => {
+          if (!staff.history) { staff.history = []; needsSave = true; }
+          if (!staff.privateNotes) { staff.privateNotes = { password: null, content: '' }; needsSave = true; }
+          if (!staff.daysOff) { staff.daysOff = []; needsSave = true; }
+        });
+
+        if (lastReset && lastReset !== today) {
+          staffData.forEach(staff => {
+            const dayCopy = JSON.parse(JSON.stringify(staff.tasks));
+            staff.history.push({ date: lastReset, tasks: dayCopy });
+            staff.tasks.forEach(t => { t.status = 'pending'; t.locked = false; });
+          });
+          needsSave = true;
+          localStorage.setItem('performX_lastReset', today);
+        } else if (!lastReset) {
+          localStorage.setItem('performX_lastReset', today);
+        }
+
+        if (needsSave) {
+          this.saveData();
+        }
+
+        this.updateNavbar();
+
+        // Refresh UI
+        const activeView = document.querySelector('.view.active');
+        if (isInitialLoad || (activeView && activeView.id === 'login-view')) {
+          const list = document.getElementById('staff-usernames');
+          if (list) {
+            list.innerHTML = `<option value="Admin"></option>`;
+            staffData.forEach(s => {
+              list.innerHTML += `<option value="${s.name}"></option>`;
+            });
+          }
+        }
+
+        if (isInitialLoad) {
+          this.showLogin();
+          isInitialLoad = false;
+        }
+
+        if (activeView) {
+          if (activeView.id === 'dashboard-view') this.renderDashboardStaffCards();
+          if (activeView.id === 'staff-view') {
+            this.renderStaffChecklist();
+            this.renderCalendar();
+          }
+          if (activeView.id === 'admin-view') {
+            this.renderAdminColumns();
+            this.renderAdminChartAndLeaderboard();
+          }
+          if (activeView.id === 'history-view') {
+            if (typeof this.renderHistory === 'function') this.renderHistory();
+          }
+        }
+      }, (error) => {
+        console.error("Firebase fetch error:", error);
+        if (isInitialLoad) {
+          this.showLogin();
+          isInitialLoad = false;
+        }
       });
-      this.saveData();
-      localStorage.setItem('performX_lastReset', today);
-    } else if (!lastReset) {
-      localStorage.setItem('performX_lastReset', today);
+    } else {
+      // Offline fallback
+      this.updateNavbar();
+      this.showLogin();
     }
-
-    this.updateNavbar();
-    this.showLogin();
 
     setInterval(() => this.checkEveningReminder(), 60000); // Check every minute
   },
 
   saveData() {
+    if (window.db) {
+      db.collection('appData').doc('staffRecords').set({ staff: staffData })
+        .catch(err => console.error("Firebase save error:", err));
+    }
     localStorage.setItem('performX_staff', JSON.stringify(staffData));
   },
 
@@ -1284,28 +1350,3 @@ const app = {
 };
 
 window.onload = () => app.init();
-
-const staffList = document.getElementById("staff-list");
-
-function loadStaff() {
-  db.collection("staff").onSnapshot((snapshot) => {
-    staffList.innerHTML = "";
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-
-      const div = document.createElement("div");
-
-      div.innerHTML = `
-        <div>
-          <h3>${data.name}</h3>
-          <p>${data.role}</p>
-        </div>
-      `;
-
-      staffList.appendChild(div);
-    });
-  });
-}
-
-loadStaff();
