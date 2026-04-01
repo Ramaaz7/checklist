@@ -290,9 +290,6 @@ function setupEventListeners() {
 function switchTab(tabId) {
     activeTab = tabId;
     
-    // Clear old listeners if needed (not strictly necessary but cleaner)
-    // Object.values(listeners).forEach(u => u());
-    
     qa('.nav-item').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
     });
@@ -301,6 +298,10 @@ function switchTab(tabId) {
         pane.classList.toggle('hidden', pane.id !== tabId);
         pane.classList.toggle('active', pane.id === tabId);
     });
+
+    if (tabId === 'tab-map' && map) {
+        setTimeout(() => map.invalidateSize(), 300);
+    }
 
     renderTab(tabId);
 }
@@ -353,7 +354,7 @@ function renderTimetable(taskMap) {
         row.className = `timetable-row flex items-center p-4 min-h-[80px] transition-colors hover:bg-slate-50 relative group`;
         
         row.innerHTML = `
-            <div class="w-20 text-sm font-bold text-slate-400">${timeStr}</div>
+            <div class="w-16 md:w-20 text-[10px] md:text-sm font-bold text-slate-400">${timeStr}</div>
             <div class="flex-1 flex items-center gap-4">
                 ${task ? `
                     <div class="flex-1 p-3 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-between group/task transition-all hover:shadow-md">
@@ -363,7 +364,7 @@ function renderTimetable(taskMap) {
                                 class="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                             <span class="text-sm font-medium ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}">${task.task}</span>
                         </div>
-                        <div class="flex gap-1 opacity-0 group-hover/task:opacity-100 transition-opacity">
+                        <div class="flex gap-1 opacity-0 md:group-hover/task:opacity-100 transition-opacity">
                             <button onclick="editTask('${task.id}', '${task.task}', '${task.time}')" class="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </button>
@@ -373,9 +374,9 @@ function renderTimetable(taskMap) {
                         </div>
                     </div>
                 ` : `
-                    <button onclick="openAddTask('${timeStr}')" class="add-task-btn absolute inset-0 md:relative md:flex items-center gap-2 text-slate-300 hover:text-indigo-600 px-3 py-1 rounded-lg hover:bg-white border-2 border-dashed border-transparent hover:border-indigo-100 transition-all font-medium text-sm">
+                    <button onclick="openAddTask('${timeStr}')" class="add-task-btn flex items-center gap-2 text-slate-400 hover:text-indigo-600 px-3 py-2 rounded-lg hover:bg-white border border-dashed border-slate-200 hover:border-indigo-100 transition-all font-medium text-xs">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                        <span>Add something to do...</span>
+                        <span>Add Task</span>
                     </button>
                 `}
             </div>
@@ -536,10 +537,29 @@ function setupLocationListener() {
             });
 
             const timestamp = loc.lastUpdated ? new Date(loc.lastUpdated.toDate()).toLocaleTimeString() : '...';
+            const gMapsUrl = `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}`;
+            const appleMapsUrl = `http://maps.apple.com/?q=${loc.lat},${loc.lng}`;
+
+            const popupContent = `
+                <div class="p-1">
+                    <b class="text-slate-800">${isMe ? 'You' : loc.username}</b><br>
+                    <span class="text-[10px] text-slate-400">Last updated: ${timestamp}</span>
+                    <div class="mt-2 flex flex-col gap-1.5">
+                        <a href="${gMapsUrl}" target="_blank" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 p-2 rounded-lg text-xs font-medium text-slate-700 transition-colors">
+                             <img src="https://www.google.com/s2/favicons?domain=maps.google.com&sz=32" class="w-4 h-4">
+                             Open in Google Maps
+                        </a>
+                        <a href="${appleMapsUrl}" target="_blank" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 p-2 rounded-lg text-xs font-medium text-slate-700 transition-colors">
+                             <img src="https://www.google.com/s2/favicons?domain=maps.apple.com&sz=32" class="w-4 h-4">
+                             Open in Apple Maps
+                        </a>
+                    </div>
+                </div>
+            `;
 
             markers[loc.username] = L.marker([loc.lat, loc.lng], { icon: customIcon })
                 .addTo(map)
-                .bindPopup(`<b>${loc.username === currentUser.username ? 'You' : loc.username}</b><br>Last updated: ${timestamp}`);
+                .bindPopup(popupContent);
             
             bounds.push([loc.lat, loc.lng]);
         });

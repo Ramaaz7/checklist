@@ -137,14 +137,11 @@
     opacity: 1;
 }
 
-.add-task-btn {
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
+/* Ensure actions are visible on touch devices */
 @media (max-width: 768px) {
-    .add-task-btn {
-        opacity: 1;
+    .group-hover\/task\:opacity-100, 
+    .opacity-0 {
+        opacity: 1 !important;
     }
 }
 
