@@ -12,7 +12,8 @@
 
 <body>
 
-
+  <div id="parallax-bg"></div>
+  <div id="parallax-glass-layer"></div>
   <div id="app">
 
     <!-- 🔥 Navbar -->
@@ -62,6 +63,11 @@
               onclick="app.togglePassword('trad-login-pass', 'toggle-trad-pass')"></i>
           </div>
 
+          <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="trad-login-remember" style="accent-color: var(--accent-primary); width: 16px; height: 16px; cursor: pointer;">
+            <label for="trad-login-remember" style="margin-bottom: 0; cursor: pointer;">Remember me</label>
+          </div>
+
           <button type="submit" class="primary-button" style="width: 100%;">Sign In</button>
 
         </form>
@@ -99,6 +105,25 @@
         <i class="fa-solid fa-quote-left" style="color: var(--accent-primary);"></i>
         <span id="daily-quote">Success is not final, failure is not fatal: it is the courage to continue that
           counts.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;">
+      <div style="flex: 1; min-width: 300px;" class="glass-panel">
+        <div style="padding: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-chart-pie"></i> Team Completion Chart</h3>
+          <div style="position: relative; height: 250px;">
+            <canvas id="dashboard-pie-chart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 300px;" class="glass-panel">
+        <div style="padding: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-trophy"></i> Top Performers</h3>
+          <div id="dashboard-leaderboard" style="display: flex; flex-direction: column; gap: 0.8rem;">
+            <!-- JS rendered -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -191,9 +216,17 @@
         <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;">
           <!-- Rendered by JS -->
         </div>
-        <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-secondary); text-align: center;">
-          <i class="fa-solid fa-circle" style="color: var(--danger-color); font-size: 8px;"></i> Click a date to
-          mark/unmark as Day Off
+        <div style="margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="font-size: 0.9rem; margin: 0;"><i class="fa-solid fa-calendar-check"></i> Leave Management</h4>
+            <button class="glass-button" id="btn-request-leave" style="padding: 5px 10px; font-size: 0.8rem; border-color: var(--accent-primary); color: var(--accent-primary);" onclick="app.showRequestLeaveModal()"><i class="fa-solid fa-plus"></i> Request</button>
+          </div>
+          <div id="staff-leave-requests-list" style="display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto;">
+             <!-- JS rendered -->
+          </div>
+          <div id="calendar-admin-inst" style="margin-top: 10px; font-size: 0.75rem; color: var(--text-secondary); text-align: center; display: none;">
+            <i class="fa-solid fa-circle" style="color: var(--danger-color); font-size: 6px;"></i> Admin: Click a date to instantly mark/unmark as Day Off
+          </div>
         </div>
       </div>
     </div>
@@ -211,6 +244,34 @@
 
       <div class="task-list" id="staff-task-list">
         <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <div class="inquiries-container glass-panel" style="margin-top: 2rem; padding: 2rem;">
+      <div class="checklist-header" style="margin-bottom: 1.5rem;">
+        <h2><i class="fa-solid fa-clipboard-list"></i> Customer Inquiries</h2>
+        <button class="primary-button" onclick="app.showAddInquiryModal()" style="padding: 8px 15px; font-size: 0.9rem;"><i class="fa-solid fa-plus"></i> Log Missed Customer</button>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <input type="text" class="input-field" id="staff-inquiries-search" placeholder="Search customer, phone, product..." oninput="app.renderStaffInquiries()" style="max-width: 400px; padding: 8px 12px; font-size: 0.85rem;">
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="inquiries-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Customer Name</th>
+              <th>Contact</th>
+              <th>Product</th>
+              <th>Section</th>
+              <th>Reason</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="staff-inquiries-tbody">
+            <!-- JS rendered -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -260,6 +321,24 @@
       </div>
 
       <div class="admin-main glass-panel" style="padding: 1.5rem;">
+        <div id="admin-pending-leaves" style="margin-bottom: 2rem; display: none;">
+          <div class="glass-panel" style="padding: 1.5rem; border: 1px solid var(--danger-color); background: rgba(244, 63, 94, 0.05);">
+            <h3 style="margin-bottom: 1rem; color: var(--danger-color);"><i class="fa-solid fa-bell fa-shake"></i> Pending Leave Requests</h3>
+            <div id="admin-leave-requests-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+               <!-- rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-active-leaves" style="margin-bottom: 2rem; display: none;">
+          <div class="glass-panel" style="padding: 1.5rem; border: 1px solid var(--warning-color); background: rgba(245, 158, 11, 0.05);">
+            <h3 style="margin-bottom: 1rem; color: var(--warning-color);"><i class="fa-solid fa-stopwatch fa-beat-fade" style="--fa-animation-duration: 2s;"></i> Active Short Leaves <span id="active-leave-clock" style="font-size: 0.9rem; float: right; color: var(--text-secondary);"></span></h3>
+            <div id="admin-active-leaves-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+               <!-- rendered by JS -->
+            </div>
+          </div>
+        </div>
+
         <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;">
           <div style="flex: 1; min-width: 300px;" class="glass-panel">
             <div style="padding: 1.5rem;">
@@ -279,6 +358,13 @@
           </div>
         </div>
 
+        <div class="glass-panel" style="margin-bottom: 2rem; padding: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-list-check"></i> Recent Activity Log</h3>
+          <div id="admin-activity-feed" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem;">
+            <!-- JS rendered -->
+          </div>
+        </div>
+
         <div
           style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 10px;">
           <h3><i class="fa-solid fa-users"></i> Staff Control</h3>
@@ -294,6 +380,34 @@
         <div class="staff-columns" id="admin-staff-columns">
           <!-- Rendered by JS -->
         </div>
+
+        <div class="glass-panel" style="margin-top: 3rem; padding: 1.5rem;">
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-address-book"></i> Store Customer Inquiries Log</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Track all logged missed customers across the store. Mark them as purchased if they return and buy.</p>
+          <div style="margin-bottom: 1rem;">
+            <input type="text" class="input-field" id="admin-inquiries-search" placeholder="Search customer, phone, product, or staff member..." oninput="app.renderAdminInquiries()" style="max-width: 400px; padding: 8px 12px; font-size: 0.85rem;">
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="inquiries-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Staff Member</th>
+                  <th>Customer</th>
+                  <th>Contact</th>
+                  <th>Product</th>
+                  <th>Section</th>
+                  <th>Reason</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-inquiries-tbody">
+                <!-- JS rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -331,6 +445,98 @@
   </div>
 
   <!-- Modals -->
+  <!-- Leave Request Modal -->
+  <div class="modal-overlay" id="request-leave-modal">
+    <div class="modal-content glass-panel" style="background: rgba(15, 23, 42, 0.95);">
+      <div class="modal-header">
+        <h3>Request Leave</h3>
+        <button class="close-btn" onclick="app.closeModal('request-leave-modal')">&times;</button>
+      </div>
+      <form onsubmit="app.submitLeaveRequest(event)">
+        <p style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">Submit a leave request for Admin approval.</p>
+        
+        <div class="form-group">
+          <label>Leave Type</label>
+          <select class="input-field" id="lr-type" onchange="app.toggleLeaveType()">
+            <option value="full">Full Day(s) Leave</option>
+            <option value="short">Short Leave</option>
+          </select>
+        </div>
+
+        <div id="lr-full-day-fields">
+          <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label>Start Date</label>
+              <input type="date" class="input-field" id="lr-start-date">
+            </div>
+            <div style="flex: 1;">
+              <label>End Date</label>
+              <input type="date" class="input-field" id="lr-end-date">
+            </div>
+          </div>
+        </div>
+
+        <div id="lr-short-leave-fields" style="display: none;">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" class="input-field" id="lr-short-date">
+          </div>
+          <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label>Start Time</label>
+              <input type="time" class="input-field" id="lr-start-time">
+            </div>
+            <div style="flex: 1;">
+              <label>End Time</label>
+              <input type="time" class="input-field" id="lr-end-time">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason (Optional)</label>
+          <input type="text" class="input-field" id="lr-reason" placeholder="e.g. Doctor appointment">
+        </div>
+        <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-paper-plane"></i> Submit Request</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Inquiry Modal -->
+  <div class="modal-overlay" id="add-inquiry-modal">
+    <div class="modal-content glass-panel" style="background: rgba(15, 23, 42, 0.95); max-width: 500px;">
+      <div class="modal-header">
+        <h3>Log Missed Customer</h3>
+        <button class="close-btn" onclick="app.closeModal('add-inquiry-modal')">&times;</button>
+      </div>
+      <form onsubmit="app.submitInquiry(event)">
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" class="input-field" id="inq-customer-name" required>
+        </div>
+        <div class="form-group">
+          <label>Contact Number</label>
+          <input type="text" class="input-field" id="inq-contact-number" required>
+        </div>
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label>Product</label>
+            <input type="text" class="input-field" id="inq-product" required>
+          </div>
+          <div style="flex: 1;">
+            <label>Section</label>
+            <input type="text" class="input-field" id="inq-section" required placeholder="e.g. Mobile, Accessories">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reason (Why no purchase?)</label>
+          <input type="text" class="input-field" id="inq-reason" required placeholder="e.g. Out of stock, pricing">
+        </div>
+        <button type="submit" class="primary-button" style="width: 100%"><i class="fa-solid fa-save"></i> Save Log</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Private Notes Modals -->
   <div class="modal-overlay" id="create-notes-pass-modal">
     <div class="modal-content glass-panel" style="background: rgba(15, 23, 42, 0.95);">

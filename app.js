@@ -44,6 +44,7 @@ let themeSettings = {
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let adminChartInstance = null;
+let dashboardChartInstance = null;
 
 const app = {
   getAdminPassword() {
@@ -57,6 +58,7 @@ const app = {
   init() {
     this.startClock();
     this.updateQuote();
+    this.initParallax();
     setInterval(() => this.updateQuote(), 10000); // 10s
 
     const savedTheme = localStorage.getItem('performX_theme');
@@ -92,6 +94,7 @@ const app = {
           if (!staff.history) { staff.history = []; needsSave = true; }
           if (!staff.privateNotes) { staff.privateNotes = { password: null, content: '' }; needsSave = true; }
           if (!staff.daysOff) { staff.daysOff = []; needsSave = true; }
+          if (!staff.leaveRequests) { staff.leaveRequests = []; needsSave = true; }
         });
 
         if (lastReset && lastReset !== today) {
@@ -125,12 +128,35 @@ const app = {
         }
 
         if (isInitialLoad) {
-          this.showLogin();
+          const savedSession = localStorage.getItem('performX_savedLogin');
+          if (savedSession) {
+            if (savedSession.toLowerCase() === 'admin') {
+              currentUser = 'Admin';
+              document.getElementById('welcome-msg').innerText = `Welcome Team Lead!`;
+              this.updateNavbar();
+              this.showDashboard();
+              this.notifyAdminIncompleteTasks();
+            } else {
+              const staff = staffData.find(s => s.name.toLowerCase() === savedSession.toLowerCase());
+              if (staff) {
+                currentUser = staff.id;
+                this.updateNavbar();
+                this.openChecklistView(staff.id);
+              } else {
+                this.showLogin();
+              }
+            }
+          } else {
+            this.showLogin();
+          }
           isInitialLoad = false;
         }
 
         if (activeView) {
-          if (activeView.id === 'dashboard-view') this.renderDashboardStaffCards();
+          if (activeView.id === 'dashboard-view') {
+            this.renderDashboardStaffCards();
+            this.renderDashboardChartAndLeaderboard();
+          }
           if (activeView.id === 'staff-view') {
             this.renderStaffChecklist();
             this.renderCalendar();
@@ -138,6 +164,8 @@ const app = {
           if (activeView.id === 'admin-view') {
             this.renderAdminColumns();
             this.renderAdminChartAndLeaderboard();
+            if (typeof this.renderAdminActivityFeed === 'function') this.renderAdminActivityFeed();
+            if (typeof this.renderAdminPendingLeaves === 'function') this.renderAdminPendingLeaves();
           }
           if (activeView.id === 'history-view') {
             if (typeof this.renderHistory === 'function') this.renderHistory();
@@ -380,6 +408,10 @@ const app = {
     if (user.toLowerCase() === 'admin') {
       if (pass === this.getAdminPassword()) {
         currentUser = 'Admin';
+
+        const remember = document.getElementById('trad-login-remember').checked;
+        if (remember) localStorage.setItem('performX_savedLogin', 'Admin');
+
         document.getElementById('welcome-msg').innerText = `Welcome Team Lead!`;
         document.getElementById('trad-login-pass').value = '';
         this.updateNavbar();
@@ -403,6 +435,10 @@ const app = {
         if (staff.password === pass) {
           this.closeModal('login-staff-modal');
           selectedLoginStaff = staff.id;
+
+          const remember = document.getElementById('trad-login-remember').checked;
+          if (remember) localStorage.setItem('performX_savedLogin', staff.name);
+
           this.completeStaffLogin(staff);
           document.getElementById('trad-login-pass').value = '';
         } else {
@@ -462,11 +498,15 @@ const app = {
     this.openChecklistView(staff.id);
 
     setTimeout(() => {
-      const incomplete = staff.tasks.filter(t => t.status === 'pending').length;
-      if (incomplete > 0) {
-        this.showToast(`Reminder: You have ${incomplete} incomplete tasks left!`, 'warning', 'fa-exclamation-triangle');
-      } else if (staff.tasks.length > 0) {
-        this.showToast(`Awesome! You've completed all your tasks.`, 'success', 'fa-check-circle');
+      try {
+        const incomplete = (staff.tasks || []).filter(t => t.status === 'pending').length;
+        if (incomplete > 0) {
+          this.showToast(`Reminder: You have ${incomplete} incomplete tasks left!`, 'warning', 'fa-exclamation-triangle');
+        } else if (staff.tasks && staff.tasks.length > 0) {
+          this.showToast(`Awesome! You've completed all your tasks.`, 'success', 'fa-check-circle');
+        }
+      } catch (e) {
+        console.error(e);
       }
     }, 1000);
   },
@@ -507,6 +547,7 @@ const app = {
 
   logout() {
     currentUser = null;
+    localStorage.removeItem('performX_savedLogin');
     this.updateNavbar();
     this.showLogin(); // Go back to sign in
   },
@@ -514,17 +555,20 @@ const app = {
   // Dashboard & Staff Page
   showDashboard() {
     this.renderDashboardStaffCards();
+    this.renderDashboardChartAndLeaderboard();
     this.showView('dashboard-view');
   },
 
   renderDashboardStaffCards() {
     const grid = document.getElementById('dashboard-staff-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     staffData.forEach(staff => {
       let completed = 0;
-      let total = staff.tasks.length;
-      staff.tasks.forEach(t => { if (t.status === 'completed') completed++; });
+      let tasks = staff.tasks || [];
+      let total = tasks.length;
+      tasks.forEach(t => { if (t.status === 'completed') completed++; });
       let percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
       const initials = staff.name.split(' ').map(n => n[0]).join('').substring(0, 2);
 
@@ -576,7 +620,100 @@ const app = {
       const dateEl = document.getElementById('digital-clock-date');
       if (clockEl) clockEl.innerText = timeStr;
       if (dateEl) dateEl.innerText = dateStr;
+
+      if (typeof this.updateLeaveTimers === 'function') this.updateLeaveTimers(now);
     }, 1000);
+  },
+
+  initParallax() {
+    const bg = document.getElementById('parallax-bg');
+    if (!bg) return;
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      const move = scrollY * 0.4; // Parallax speed factor
+      bg.style.transform = `translate3d(0, ${move}px, 0)`;
+    }, { passive: true });
+  },
+
+  updateLeaveTimers(now) {
+    const list = document.getElementById('admin-active-leaves-list');
+    const wrapper = document.getElementById('admin-active-leaves');
+    if (!list || !wrapper) return;
+
+    let hasActive = false;
+    let html = '';
+
+    const currentDateStr = now.toISOString().split('T')[0];
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    staffData.forEach(staff => {
+      if (staff.leaveRequests) {
+        staff.leaveRequests.forEach(lr => {
+          if (lr.status === 'approved' && lr.type === 'short' && !lr.returned && lr.date === currentDateStr) {
+            const [sH, sM] = lr.startTime.split(':').map(Number);
+            const [eH, eM] = lr.endTime.split(':').map(Number);
+            const startMins = sH * 60 + sM;
+            const endMins = eH * 60 + eM;
+
+            hasActive = true;
+            let timeText = '';
+            let badgeColor = '';
+
+            if (currentMins < startMins) {
+              const diff = startMins - currentMins;
+              timeText = `Starts in ${Math.floor(diff / 60)}h ${diff % 60}m`;
+              badgeColor = 'var(--accent-primary)';
+            } else if (currentMins <= endMins) {
+              const diff = endMins - currentMins;
+              timeText = `Expected back in ${Math.floor(diff / 60)}h ${diff % 60}m`;
+              badgeColor = 'var(--warning-color)';
+            } else {
+              const diff = currentMins - endMins;
+              timeText = `OVERDUE by ${Math.floor(diff / 60)}h ${diff % 60}m`;
+              badgeColor = 'var(--danger-color)';
+            }
+
+            let avHTML = staff.avatar ? `<div style="width: 30px; height: 30px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
+              : `<div style="width: 30px; height: 30px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">${staff.name.substring(0, 1)}</div>`;
+
+            html += `
+              <div class="glass-panel" style="padding: 10px; border-left: 3px solid ${badgeColor === 'var(--danger-color)' ? 'var(--danger-color)' : (badgeColor === 'var(--accent-primary)' ? 'var(--accent-primary)' : 'var(--warning-color)')}; display: flex; align-items: center; gap: 10px;">
+                ${avHTML}
+                <div style="flex: 1;">
+                  <strong style="font-size: 0.9rem;">${staff.name}</strong> 
+                  <span style="font-size: 0.75rem; color: var(--text-secondary);">${currentMins < startMins ? 'scheduled for' : 'out for'} <strong>${lr.reason || 'Leave'}</strong></span>
+                  <div style="font-size: 0.75rem; color: ${badgeColor}; font-weight: bold; margin-top: 2px;">
+                    <i class="fa-solid fa-clock"></i> ${timeText} (${lr.startTime} - ${lr.endTime})
+                  </div>
+                </div>
+                <button class="glass-button" style="padding: 5px 8px; font-size:0.75rem; border-color: var(--success-color); color: var(--success-color);" onclick="app.markStaffReturned('${staff.id}', '${lr.id}')">${currentMins < startMins ? 'Cancel' : 'Returned'}</button>
+              </div>
+            `;
+          }
+        });
+      }
+    });
+
+    if (list.innerHTML !== html) {
+      list.innerHTML = html;
+    }
+    wrapper.style.display = hasActive ? 'block' : 'none';
+  },
+
+  markStaffReturned(staffId, lrId) {
+    const staff = staffData.find(s => s.id === staffId);
+    if (!staff) return;
+    const lr = staff.leaveRequests.find(l => l.id === lrId);
+    if (!lr) return;
+    lr.returned = true;
+    lr.returnedTime = new Date().toISOString();
+    this.saveData();
+    this.updateLeaveTimers(new Date());
+
+    const staffView = document.getElementById('staff-view');
+    if (staffView && staffView.classList.contains('active-view')) {
+      this.renderStaffLeaveRequests();
+    }
   },
 
   changeMonth(dir) {
@@ -622,6 +759,10 @@ const app = {
   },
 
   toggleDayOff(dateStr) {
+    if (currentUser !== 'Admin') {
+      this.showRequestLeaveModal(dateStr);
+      return;
+    }
     const staff = staffData.find(s => s.id === currentStaffId);
     if (!staff) return;
 
@@ -635,6 +776,108 @@ const app = {
     }
     this.saveData();
     this.renderCalendar();
+  },
+
+  toggleLeaveType() {
+    const type = document.getElementById('lr-type').value;
+    if (type === 'short') {
+      document.getElementById('lr-full-day-fields').style.display = 'none';
+      document.getElementById('lr-short-leave-fields').style.display = 'block';
+    } else {
+      document.getElementById('lr-full-day-fields').style.display = 'block';
+      document.getElementById('lr-short-leave-fields').style.display = 'none';
+    }
+  },
+
+  showRequestLeaveModal(dateStr) {
+    document.getElementById('lr-type').value = 'full';
+    document.getElementById('lr-start-date').value = dateStr || '';
+    document.getElementById('lr-end-date').value = dateStr || '';
+    document.getElementById('lr-short-date').value = dateStr || '';
+    document.getElementById('lr-start-time').value = '';
+    document.getElementById('lr-end-time').value = '';
+    document.getElementById('lr-reason').value = '';
+    this.toggleLeaveType();
+    this.showModal('request-leave-modal');
+  },
+
+  submitLeaveRequest(e) {
+    e.preventDefault();
+    const type = document.getElementById('lr-type').value;
+    const reason = document.getElementById('lr-reason').value;
+    const staff = staffData.find(s => s.id === currentStaffId);
+
+    if (staff) {
+      if (!staff.leaveRequests) staff.leaveRequests = [];
+
+      let reqData = {
+        id: 'lr' + Date.now(),
+        type: type,
+        reason: reason,
+        status: 'pending'
+      };
+
+      if (type === 'full') {
+        const sDate = document.getElementById('lr-start-date').value;
+        const eDate = document.getElementById('lr-end-date').value;
+        if (!sDate || !eDate) return alert("Select start and end dates.");
+        if (sDate > eDate) return alert("End date must be after start date.");
+        reqData.startDate = sDate;
+        reqData.endDate = eDate;
+        reqData.date = (sDate === eDate) ? sDate : `${sDate} to ${eDate}`;
+      } else {
+        const date = document.getElementById('lr-short-date').value;
+        const sTime = document.getElementById('lr-start-time').value;
+        const eTime = document.getElementById('lr-end-time').value;
+        if (!date || !sTime || !eTime) return alert("Fill in valid date and times.");
+        reqData.date = date;
+        reqData.startTime = sTime;
+        reqData.endTime = eTime;
+        reqData.returned = false;
+      }
+
+      staff.leaveRequests.push(reqData);
+      this.saveData();
+      this.renderStaffLeaveRequests();
+      this.closeModal('request-leave-modal');
+      this.showToast('Leave request submitted properly.', 'success');
+    }
+  },
+
+  renderStaffLeaveRequests() {
+    const list = document.getElementById('staff-leave-requests-list');
+    if (!list) return;
+    const staff = staffData.find(s => s.id === currentStaffId);
+    if (!staff || !staff.leaveRequests || staff.leaveRequests.length === 0) {
+      list.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem 0;">No leave requests.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    staff.leaveRequests.slice().reverse().forEach(lr => {
+      let badge = lr.status === 'approved' ? '<span style="color: var(--success-color);"><i class="fa-solid fa-check"></i> Approved</span>'
+        : (lr.status === 'rejected' ? '<span style="color: var(--danger-color);"><i class="fa-solid fa-xmark"></i> Rejected</span>' : '<span style="color: var(--warning-color);"><i class="fa-solid fa-clock"></i> Pending</span>');
+
+      let typeLabel = lr.type === 'short' ? `<span style="font-size:0.7rem; background:rgba(245,158,11,0.2); color:var(--warning-color); padding: 2px 5px; border-radius: 4px; margin-left: 5px;">Short Leave (${lr.startTime}-${lr.endTime})</span>` : '';
+
+      let actionBtn = '';
+      if (lr.type === 'short' && lr.status === 'approved' && !lr.returned) {
+        actionBtn = `<button class="glass-button" style="margin-top: 10px; width: 100%; justify-content: center; border-color: var(--success-color); color: var(--success-color); font-weight: bold; padding: 8px;" onclick="app.markStaffReturned('${staff.id}', '${lr.id}')"><i class="fa-solid fa-person-walking-arrow-right"></i> Punch Return</button>`;
+      }
+
+      list.innerHTML += `
+        <div class="glass-panel" style="padding: 10px; font-size: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <strong>${lr.date}</strong> ${typeLabel}
+              <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 2px;">${lr.reason || 'No reason specified'}</div>
+            </div>
+            <div>${badge}</div>
+          </div>
+          ${actionBtn}
+        </div>
+      `;
+    });
   },
 
   getStaffRank(staffId) {
@@ -680,12 +923,24 @@ const app = {
     currentMonth = new Date().getMonth();
     currentYear = new Date().getFullYear();
     this.renderCalendar();
+    this.renderStaffLeaveRequests();
+    this.renderStaffInquiries();
 
     const editBtn = document.getElementById('edit-profile-btn');
     if (currentUser === 'Admin' && currentUser !== id) {
       if (editBtn) editBtn.style.display = 'none';
     } else {
       if (editBtn) editBtn.style.display = 'inline-flex';
+    }
+
+    const adminInst = document.getElementById('calendar-admin-inst');
+    const btnRequest = document.getElementById('btn-request-leave');
+    if (currentUser === 'Admin') {
+      if (adminInst) adminInst.style.display = 'block';
+      if (btnRequest) btnRequest.style.display = 'none';
+    } else {
+      if (adminInst) adminInst.style.display = 'none';
+      if (btnRequest) btnRequest.style.display = 'inline-flex';
     }
 
     this.showView('staff-view');
@@ -704,16 +959,35 @@ const app = {
       const isLocked = task.locked ? 'disabled' : '';
       const opacityStyle = task.locked ? 'opacity: 0.5; cursor: not-allowed;' : '';
 
+      let photoBtnHtml = '';
+      if (task.requiresPhoto) {
+        if (task.photoUrl) {
+          photoBtnHtml = `<div style="margin-top: 8px;"><a href="${task.photoUrl}" target="_blank" style="color: var(--accent-primary); font-size: 0.85rem;"><i class="fa-solid fa-image"></i> View Uploaded Proof</a></div>`;
+        } else {
+          photoBtnHtml = `
+            <div style="margin-top: 8px;">
+              <label style="cursor: pointer; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 6px; font-size: 0.85rem; border: 1px dashed var(--accent-primary); color: var(--accent-primary); display: inline-flex; align-items: center; gap: 5px; transition: all 0.3s;">
+                <i class="fa-solid fa-camera"></i> Upload Proof Photo
+                <input type="file" accept="image/*" style="display: none;" onchange="app.uploadTaskPhoto(event, '${task.id}')">
+              </label>
+              <div style="font-size: 0.75rem; color: var(--danger-color); margin-top: 4px;">* Photo required to complete this task</div>
+            </div>`;
+        }
+      }
+
       const item = document.createElement('div');
       item.className = 'task-item glass-panel';
       item.innerHTML = `
-        <div class="task-info">
+        <div class="task-info" style="flex: 1;">
           <div class="task-status status-${task.status}"></div>
-          <div class="task-title" style="text-decoration: ${task.status === 'completed' ? 'line-through' : 'none'}; color: ${task.status === 'completed' ? 'var(--text-secondary)' : 'var(--text-primary)'}">${task.title}</div>
+          <div style="flex: 1;">
+            <div class="task-title" style="text-decoration: ${task.status === 'completed' ? 'line-through' : 'none'}; color: ${task.status === 'completed' ? 'var(--text-secondary)' : 'var(--text-primary)'}">${task.title}</div>
+            ${photoBtnHtml}
+          </div>
         </div>
         <div class="task-actions">
-          <button class="action-btn btn-tick" onclick="app.updateTaskStatus('${task.id}', 'completed')" title="Mark Completed" ${isLocked} style="${opacityStyle}"><i class="fa-solid fa-check"></i></button>
-          <button class="action-btn btn-cross" onclick="app.updateTaskStatus('${task.id}', 'failed')" title="Mark Not Completed" ${isLocked} style="${opacityStyle}"><i class="fa-solid fa-xmark"></i></button>
+          <button class="action-btn btn-tick" onclick="app.tryUpdateTaskStatus('${task.id}', 'completed')" title="Mark Completed" ${isLocked} style="${opacityStyle}"><i class="fa-solid fa-check"></i></button>
+          <button class="action-btn btn-cross" onclick="app.tryUpdateTaskStatus('${task.id}', 'failed')" title="Mark Not Completed" ${isLocked} style="${opacityStyle}"><i class="fa-solid fa-xmark"></i></button>
         </div>
       `;
       list.appendChild(item);
@@ -730,16 +1004,34 @@ const app = {
     e.preventDefault();
     const staff = staffData.find(s => s.id === currentStaffId);
     if (staff) {
+      const title = document.getElementById('new-task-input').value;
+      const requiresPhoto = title.toLowerCase().includes('clean');
       staff.tasks.push({
         id: 't' + Date.now(),
-        title: document.getElementById('new-task-input').value,
+        title: title,
         status: 'pending',
-        locked: false
+        locked: false,
+        requiresPhoto: requiresPhoto,
+        photoUrl: null
       });
       this.saveData();
       this.renderStaffChecklist();
     }
     document.getElementById('new-task-input').value = '';
+  },
+
+  tryUpdateTaskStatus(taskId, status) {
+    const staff = staffData.find(s => s.id === currentStaffId);
+    if (!staff) return;
+    const task = staff.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (status === 'completed' && task.requiresPhoto && !task.photoUrl) {
+      alert("This task requires a proof photo to be uploaded before it can be marked as completed.");
+      return;
+    }
+
+    this.updateTaskStatus(taskId, status);
   },
 
   updateTaskStatus(taskId, status) {
@@ -748,6 +1040,7 @@ const app = {
       const task = staff.tasks.find(t => t.id === taskId);
       if (task && !task.locked) {
         task.status = status;
+        if (status === 'completed') task.completedTime = new Date().toISOString();
         task.locked = true;
         this.saveData();
         this.renderStaffChecklist();
@@ -756,6 +1049,28 @@ const app = {
         }
       }
     }
+  },
+
+  uploadTaskPhoto(event, taskId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      const staff = staffData.find(s => s.id === currentStaffId);
+      if (staff) {
+        const task = staff.tasks.find(t => t.id === taskId);
+        if (task) {
+          task.photoUrl = base64;
+          task.photoUploadTime = new Date().toISOString();
+          this.saveData();
+          this.renderStaffChecklist();
+          this.showToast('Photo uploaded successfully!', 'success');
+        }
+      }
+    };
+    reader.readAsDataURL(file);
   },
 
   // Admin Area
@@ -772,7 +1087,160 @@ const app = {
   showAdminPanel() {
     this.renderAdminColumns();
     this.renderAdminChartAndLeaderboard();
+    this.renderAdminActivityFeed();
+    this.renderAdminPendingLeaves();
+    this.renderAdminInquiries();
     this.showView('admin-view');
+  },
+
+  renderAdminPendingLeaves() {
+    const wrapper = document.getElementById('admin-pending-leaves');
+    const list = document.getElementById('admin-leave-requests-list');
+    if (!wrapper || !list) return;
+
+    let hasPending = false;
+    list.innerHTML = '';
+
+    staffData.forEach(staff => {
+      if (staff.leaveRequests) {
+        staff.leaveRequests.forEach(lr => {
+          if (lr.status === 'pending') {
+            hasPending = true;
+            let avHTML = staff.avatar ? `<div style="width: 30px; height: 30px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
+              : `<div style="width: 30px; height: 30px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">${staff.name.substring(0, 1)}</div>`;
+
+            let typeInfo = lr.type === 'short' ? `<span style="color:var(--warning-color); padding-left: 3px;"><i class="fa-solid fa-stopwatch"></i> Short Leave (${lr.startTime} - ${lr.endTime})</span>` : `Full Leave`;
+
+            list.innerHTML += `
+              <div class="glass-panel" style="padding: 10px; display: flex; align-items: center; gap: 10px;">
+                ${avHTML}
+                <div style="flex: 1;">
+                  <strong style="font-size: 0.9rem;">${staff.name}</strong> 
+                  <span style="font-size: 0.75rem; color: var(--text-secondary);">requested <strong>${typeInfo}</strong> on ${lr.date}</span>
+                  <div style="font-size: 0.85rem; color: var(--text-primary); margin-top: 2px;">"${lr.reason || 'No reason specified'}"</div>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                  <button class="glass-button" style="padding: 5px 8px; color: var(--success-color); border-color: var(--success-color);" onclick="app.adminHandleLeave('${staff.id}', '${lr.id}', 'approved')"><i class="fa-solid fa-check"></i></button>
+                  <button class="glass-button" style="padding: 5px 8px; color: var(--danger-color); border-color: var(--danger-color);" onclick="app.adminHandleLeave('${staff.id}', '${lr.id}', 'rejected')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
+            `;
+          }
+        });
+      }
+    });
+
+    wrapper.style.display = hasPending ? 'block' : 'none';
+  },
+
+  adminHandleLeave(staffId, lrId, status) {
+    const staff = staffData.find(s => s.id === staffId);
+    if (!staff) return;
+    const lr = staff.leaveRequests.find(l => l.id === lrId);
+    if (!lr) return;
+
+    lr.status = status;
+    if (status === 'approved') {
+      if (lr.type !== 'short' && lr.startDate && lr.endDate) {
+        if (!staff.daysOff) staff.daysOff = [];
+        let curr = new Date(lr.startDate);
+        let end = new Date(lr.endDate);
+        while (curr <= end) {
+          const dStr = curr.toISOString().split('T')[0];
+          if (!staff.daysOff.includes(dStr)) staff.daysOff.push(dStr);
+          curr.setDate(curr.getDate() + 1);
+        }
+      } else if (lr.date && lr.type !== 'short') { // Backward compatibility
+        if (!staff.daysOff) staff.daysOff = [];
+        if (!staff.daysOff.includes(lr.date)) staff.daysOff.push(lr.date);
+      }
+    }
+
+    this.saveData();
+    this.renderAdminPendingLeaves();
+    this.showToast('Leave request ' + status, status === 'approved' ? 'success' : 'danger');
+    if (typeof this.updateLeaveTimers === 'function') this.updateLeaveTimers(new Date());
+  },
+
+  renderAdminActivityFeed() {
+    const feed = document.getElementById('admin-activity-feed');
+    if (!feed) return;
+
+    let activities = [];
+
+    staffData.forEach(staff => {
+      staff.tasks.forEach(t => {
+        if (t.status === 'completed' && t.completedTime) {
+          activities.push({
+            type: 'completed',
+            staff: staff.name,
+            avatar: staff.avatar,
+            taskTitle: t.title,
+            time: new Date(t.completedTime),
+            timeStr: new Date(t.completedTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+          });
+        }
+        if (t.photoUrl && t.photoUploadTime) {
+          activities.push({
+            type: 'photo',
+            staff: staff.name,
+            avatar: staff.avatar,
+            taskTitle: t.title,
+            time: new Date(t.photoUploadTime),
+            timeStr: new Date(t.photoUploadTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+          });
+        }
+      });
+      if (staff.leaveRequests) {
+        staff.leaveRequests.forEach(lr => {
+          if (lr.returned && lr.returnedTime) {
+            activities.push({
+              type: 'returned',
+              staff: staff.name,
+              avatar: staff.avatar,
+              taskTitle: lr.reason || 'Short Leave', // Used to denote what they returned from
+              time: new Date(lr.returnedTime),
+              timeStr: new Date(lr.returnedTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            });
+          }
+        });
+      }
+    });
+
+    activities.sort((a, b) => b.time - a.time);
+
+    feed.innerHTML = '';
+
+    if (activities.length === 0) {
+      feed.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 1rem;">No recent activities for today.</div>';
+      return;
+    }
+
+    activities.slice(0, 10).forEach(act => {
+      let iconHtml = '';
+      if (act.type === 'photo') {
+        iconHtml = '<div style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-camera"></i></div>';
+      } else if (act.type === 'returned') {
+        iconHtml = '<div style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-person-walking-arrow-right"></i></div>';
+      } else {
+        iconHtml = '<div style="background: rgba(16, 185, 129, 0.2); color: #10b981; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-check"></i></div>';
+      }
+
+      let textHtml = '';
+      if (act.type === 'photo') textHtml = `<strong>${act.staff}</strong> uploaded a proof photo for <em>${act.taskTitle}</em>`;
+      else if (act.type === 'returned') textHtml = `<strong>${act.staff}</strong> officially reached back into work from <em>${act.taskTitle}</em>`;
+      else textHtml = `<strong>${act.staff}</strong> completed <em>${act.taskTitle}</em>`;
+
+      feed.innerHTML += `
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+          ${iconHtml}
+          <div style="flex: 1; font-size: 0.9rem;">
+            ${textHtml}
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">${act.timeStr}</div>
+          </div>
+        </div>
+      `;
+    });
   },
 
   renderAdminChartAndLeaderboard() {
@@ -786,70 +1254,103 @@ const app = {
 
     const leaderboardCont = document.getElementById('admin-leaderboard');
     if (leaderboardCont) {
-      leaderboardCont.innerHTML = '';
-      ranking.slice(0, 3).forEach((staff, index) => {
-        if (staff.completed === 0) return;
-        const rankColors = ['#fbbf24', '#9ca3af', '#b45309'];
-        const color = rankColors[index] || 'var(--text-secondary)';
-
-        let avHTML = staff.avatar ? `<div style="width: 30px; height: 30px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
-          : `<div style="width: 30px; height: 30px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">${staff.name.substring(0, 1)}</div>`;
-
-        leaderboardCont.innerHTML += `
-          <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-            <div style="color: ${color}; font-size: 1.2rem; font-weight: bold; width: 25px;">#${index + 1}</div>
-            ${avHTML}
-            <div style="flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${staff.name}</div>
-            <div style="font-weight: bold; color: var(--success-color);">${staff.completed} <i class="fa-solid fa-check"></i></div>
-          </div>
-        `;
-      });
-      if (leaderboardCont.innerHTML === '') {
-        leaderboardCont.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 1rem;">No completed tasks yet.</div>';
-      }
+      this.populateLeaderboard(leaderboardCont, ranking);
     }
 
     const ctx = document.getElementById('admin-pie-chart');
-    if (!ctx) return;
+    if (ctx) {
+      adminChartInstance = this.renderPieChart(ctx, adminChartInstance, ranking);
+    }
+  },
 
-    const labels = [];
-    const data = [];
-    const bgColors = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
-
-    let totalTeamCompleted = 0;
-    ranking.forEach(s => {
-      if (s.completed > 0) {
-        labels.push(s.name);
-        data.push(s.completed);
-        totalTeamCompleted += s.completed;
-      }
+  renderDashboardChartAndLeaderboard() {
+    let ranking = staffData.map(s => {
+      let completed = 0;
+      s.tasks.forEach(t => { if (t.status === 'completed') completed++; });
+      return { id: s.id, name: s.name, avatar: s.avatar, completed };
     });
 
-    if (adminChartInstance) adminChartInstance.destroy();
-    if (totalTeamCompleted > 0) {
-      adminChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{ data: data, backgroundColor: bgColors, borderWidth: 0, hoverOffset: 4 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }
+    ranking.sort((a, b) => b.completed - a.completed);
+
+    const leaderboardCont = document.getElementById('dashboard-leaderboard');
+    if (leaderboardCont) {
+      this.populateLeaderboard(leaderboardCont, ranking);
+    }
+
+    const ctx = document.getElementById('dashboard-pie-chart');
+    if (ctx) {
+      dashboardChartInstance = this.renderPieChart(ctx, dashboardChartInstance, ranking);
+    }
+  },
+
+  populateLeaderboard(leaderboardCont, ranking) {
+    leaderboardCont.innerHTML = '';
+    ranking.slice(0, 3).forEach((staff, index) => {
+      if (staff.completed === 0) return;
+      const rankColors = ['#fbbf24', '#9ca3af', '#b45309'];
+      const color = rankColors[index] || 'var(--text-secondary)';
+
+      let avHTML = staff.avatar ? `<div style="width: 30px; height: 30px; border-radius: 50%; background-image: url('${staff.avatar}'); background-size: cover; background-position: center;"></div>`
+        : `<div style="width: 30px; height: 30px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">${staff.name.substring(0, 1)}</div>`;
+
+      leaderboardCont.innerHTML += `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+          <div style="color: ${color}; font-size: 1.2rem; font-weight: bold; width: 25px;">#${index + 1}</div>
+          ${avHTML}
+          <div style="flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${staff.name}</div>
+          <div style="font-weight: bold; color: var(--success-color);">${staff.completed} <i class="fa-solid fa-check"></i></div>
+        </div>
+      `;
+    });
+    if (leaderboardCont.innerHTML === '') {
+      leaderboardCont.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 1rem;">No completed tasks yet.</div>';
+    }
+  },
+
+  renderPieChart(ctx, chartInstance, ranking) {
+    try {
+      const labels = [];
+      const data = [];
+      const bgColors = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
+
+      let totalTeamCompleted = 0;
+      ranking.forEach(s => {
+        if (s.completed > 0) {
+          labels.push(s.name);
+          data.push(s.completed);
+          totalTeamCompleted += s.completed;
         }
       });
-    } else {
-      adminChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['No Data'],
-          datasets: [{ data: [1], backgroundColor: ['#334155'], borderWidth: 0 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } }
-        }
-      });
+
+      if (chartInstance) chartInstance.destroy();
+      if (totalTeamCompleted > 0) {
+        return new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{ data: data, backgroundColor: bgColors, borderWidth: 0, hoverOffset: 4 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }
+          }
+        });
+      } else {
+        return new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['No Data'],
+            datasets: [{ data: [1], backgroundColor: ['#334155'], borderWidth: 0 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Chart.js failed to render (possibly offline):", err);
+      return null;
     }
   },
 
@@ -914,7 +1415,8 @@ const app = {
       tasks: [],
       history: [],
       privateNotes: { password: null, content: '' },
-      daysOff: []
+      daysOff: [],
+      leaveRequests: []
     });
     this.saveData();
     document.getElementById('new-staff-name').value = '';
@@ -1109,9 +1611,13 @@ const app = {
 
   notifyAdminIncompleteTasks() {
     setTimeout(() => {
-      let incompleteStaffs = staffData.filter(s => s.tasks.some(t => t.status === 'pending')).length;
-      if (incompleteStaffs > 0) {
-        this.showToast(`Heads up! ${incompleteStaffs} team member(s) have incomplete tasks.`, 'warning', 'fa-exclamation-triangle');
+      try {
+        let incompleteStaffs = staffData.filter(s => s.tasks && s.tasks.some(t => t.status === 'pending')).length;
+        if (incompleteStaffs > 0) {
+          this.showToast(`Heads up! ${incompleteStaffs} team member(s) have incomplete tasks.`, 'warning', 'fa-exclamation-triangle');
+        }
+      } catch (e) {
+        console.error(e);
       }
     }, 1000);
   },
@@ -1346,6 +1852,162 @@ const app = {
     if (found === 0) {
       grid.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-secondary);">No historical records found for this criteria.</p>`;
     }
+  },
+
+  showAddInquiryModal() {
+    document.getElementById('inq-customer-name').value = '';
+    document.getElementById('inq-contact-number').value = '';
+    document.getElementById('inq-product').value = '';
+    document.getElementById('inq-section').value = '';
+    document.getElementById('inq-reason').value = '';
+    this.showModal('add-inquiry-modal');
+  },
+
+  submitInquiry(e) {
+    e.preventDefault();
+    const staff = staffData.find(s => s.id === currentStaffId);
+    if (!staff) return;
+    if (!staff.inquiries) staff.inquiries = [];
+
+    const inquiry = {
+      id: 'inq' + Date.now(),
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      customerName: document.getElementById('inq-customer-name').value,
+      contact: document.getElementById('inq-contact-number').value,
+      product: document.getElementById('inq-product').value,
+      section: document.getElementById('inq-section').value,
+      reason: document.getElementById('inq-reason').value,
+      purchased: false,
+      purchasedTime: null
+    };
+
+    staff.inquiries.push(inquiry);
+    this.saveData();
+    this.renderStaffInquiries();
+    this.closeModal('add-inquiry-modal');
+    this.showToast('Missed customer logged successfully!', 'success');
+  },
+
+  renderStaffInquiries() {
+    const list = document.getElementById('staff-inquiries-tbody');
+    if (!list) return;
+    const staff = staffData.find(s => s.id === currentStaffId);
+    if (!staff || !staff.inquiries || staff.inquiries.length === 0) {
+      list.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 1rem;">No missed customers logged yet.</td></tr>';
+      return;
+    }
+
+    const searchInput = document.getElementById('staff-inquiries-search');
+    const term = searchInput ? searchInput.value.toLowerCase() : '';
+
+    let filtered = staff.inquiries.slice().reverse();
+    if (term) {
+      filtered = filtered.filter(inq =>
+        (inq.customerName || '').toLowerCase().includes(term) ||
+        (inq.contact || '').toLowerCase().includes(term) ||
+        (inq.product || '').toLowerCase().includes(term)
+      );
+    }
+
+    list.innerHTML = '';
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 1rem;">No matching inquiries found.</td></tr>';
+      return;
+    }
+
+    filtered.forEach(inq => {
+      let statusHtml = inq.purchased
+        ? `<span style="color: var(--success-color); font-weight: bold;"><i class="fa-solid fa-check"></i> Purchased</span>`
+        : `<span style="color: var(--danger-color); font-weight: bold;"><i class="fa-solid fa-xmark"></i> Missed</span>`;
+
+      list.innerHTML += `
+        <tr>
+          <td>${inq.date}</td>
+          <td>${inq.customerName}</td>
+          <td>${inq.contact}</td>
+          <td>${inq.product}</td>
+          <td>${inq.section}</td>
+          <td>${inq.reason}</td>
+          <td>${statusHtml}</td>
+        </tr>
+      `;
+    });
+  },
+
+  renderAdminInquiries() {
+    const list = document.getElementById('admin-inquiries-tbody');
+    if (!list) return;
+
+    let allInquiries = [];
+    staffData.forEach(staff => {
+      if (staff.inquiries) {
+        staff.inquiries.forEach(inq => {
+          allInquiries.push({ ...inq, staffName: staff.name, staffId: staff.id });
+        });
+      }
+    });
+
+    if (allInquiries.length === 0) {
+      list.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 1rem;">No customer inquiries logged across the store.</td></tr>';
+      return;
+    }
+
+    const searchInput = document.getElementById('admin-inquiries-search');
+    const term = searchInput ? searchInput.value.toLowerCase() : '';
+
+    let filtered = allInquiries;
+    if (term) {
+      filtered = filtered.filter(inq =>
+        (inq.customerName || '').toLowerCase().includes(term) ||
+        (inq.contact || '').toLowerCase().includes(term) ||
+        (inq.product || '').toLowerCase().includes(term) ||
+        (inq.staffName || '').toLowerCase().includes(term)
+      );
+    }
+
+    filtered.sort((a, b) => b.id.localeCompare(a.id));
+
+    list.innerHTML = '';
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 1rem;">No matching inquiries found.</td></tr>';
+      return;
+    }
+
+    filtered.forEach(inq => {
+      let actionHtml = inq.purchased
+        ? `<span style="color: var(--success-color); font-weight: bold;"><i class="fa-solid fa-check"></i> Purchased</span>`
+        : `<button class="glass-button" style="padding: 5px 8px; font-size: 0.8rem; color: var(--success-color); border-color: var(--success-color);" onclick="app.markInquiryPurchased('${inq.staffId}', '${inq.id}')"><i class="fa-solid fa-cart-arrow-down"></i> Mark Purchased</button>`;
+
+      list.innerHTML += `
+        <tr>
+          <td style="white-space: nowrap;">${inq.date}</td>
+          <td><strong>${inq.staffName}</strong></td>
+          <td>${inq.customerName}</td>
+          <td>${inq.contact}</td>
+          <td>${inq.product}</td>
+          <td>${inq.section}</td>
+          <td>${inq.reason}</td>
+          <td>${actionHtml}</td>
+        </tr>
+      `;
+    });
+  },
+
+  markInquiryPurchased(staffId, inqId) {
+    const staff = staffData.find(s => s.id === staffId);
+    if (!staff) return;
+    const inq = staff.inquiries.find(i => i.id === inqId);
+    if (!inq) return;
+
+    inq.purchased = true;
+    inq.purchasedTime = new Date().toISOString();
+    this.saveData();
+    this.renderAdminInquiries();
+
+    this.showToast(`Great job! ${inq.customerName} marked as purchased!`, 'success');
+    this.renderAdminActivityFeed();
   }
 };
 
