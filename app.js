@@ -46,6 +46,12 @@ let currentYear = new Date().getFullYear();
 let adminChartInstance = null;
 let dashboardChartInstance = null;
 
+// Initialize robust local IndexedDB for scaling huge amounts of offline mobile data
+const localDB = new Dexie("PerformXDatabase");
+localDB.version(1).stores({
+  data: 'id' // Primary key
+});
+
 const app = {
   getAdminPassword() {
     return localStorage.getItem('performX_menuPass') || 'ramaaz123';
@@ -73,10 +79,22 @@ const app = {
 
     // Fetch localized data for fast rendering first
     const saved = localStorage.getItem('performX_staff');
-    if (saved) staffData = JSON.parse(saved);
+    if (saved) {
+      try { staffData = JSON.parse(saved); } catch (e) {}
+    }
+
+    // Load from robust Dexie DB first instead of quota-limited local storage
+    if (window.localDB) {
+      localDB.data.get('staffRecords').then(doc => {
+        if (doc && doc.records && doc.records.length > 0 && !window.dbActive) {
+          staffData = doc.records;
+        }
+      }).catch(e => console.warn(e));
+    }
 
     // Setup Firebase Listener
     if (window.db) {
+      window.dbActive = true;
       db.collection('appData').doc('staffRecords').onSnapshot((doc) => {
         if (doc.exists) {
           staffData = doc.data().staff;
@@ -192,7 +210,16 @@ const app = {
       db.collection('appData').doc('staffRecords').set({ staff: staffData })
         .catch(err => console.error("Firebase save error:", err));
     }
-    localStorage.setItem('performX_staff', JSON.stringify(staffData));
+    
+    if (window.localDB) {
+      window.localDB.data.put({ id: 'staffRecords', records: staffData }).catch(e => console.warn(e));
+    }
+
+    try {
+      localStorage.setItem('performX_staff', JSON.stringify(staffData));
+    } catch (e) {
+      console.warn("Storage quota hit! Relying solely on Dexie and Firebase caching.");
+    }
   },
 
   checkEveningReminder() {

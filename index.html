@@ -8,6 +8,21 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <style>
+    /* Absolute Mobile Optimization */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    input, button, textarea, select {
+      font-size: 16px !important; /* Prevents iOS auto-zoom on inputs */
+    }
+    .overflow-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch; /* Smooth iOS bounce scroll */
+      width: 100%;
+    }
+  </style>
 </head>
 
 <body>
@@ -255,7 +270,7 @@
       <div style="margin-bottom: 1rem;">
         <input type="text" class="input-field" id="staff-inquiries-search" placeholder="Search customer, phone, product..." oninput="app.renderStaffInquiries()" style="max-width: 400px; padding: 8px 12px; font-size: 0.85rem;">
       </div>
-      <div style="overflow-x: auto;">
+      <div class="overflow-container">
         <table class="inquiries-table">
           <thead>
             <tr>
@@ -387,7 +402,7 @@
           <div style="margin-bottom: 1rem;">
             <input type="text" class="input-field" id="admin-inquiries-search" placeholder="Search customer, phone, product, or staff member..." oninput="app.renderAdminInquiries()" style="max-width: 400px; padding: 8px 12px; font-size: 0.85rem;">
           </div>
-          <div style="overflow-x: auto;">
+          <div class="overflow-container">
             <table class="inquiries-table">
               <thead>
                 <tr>
